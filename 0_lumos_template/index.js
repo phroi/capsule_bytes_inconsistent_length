@@ -1,14 +1,14 @@
 "use strict";
 
 import fs from "fs";
-import {utils} from "@ckb-lumos/base";
-const {ckbHash} = utils;
-import {initializeConfig} from "@ckb-lumos/config-manager";
-import {addressToScript, sealTransaction, TransactionSkeleton} from "@ckb-lumos/helpers";
-import {Indexer} from "@ckb-lumos/ckb-indexer";
-import {addDefaultCellDeps, addDefaultWitnessPlaceholders, collectCapacity, getLiveCell, indexerReady, readFileToHexString, readFileToHexStringSync, sendTransaction, signTransaction, waitForTransactionConfirmation} from "../lib/index.js";
-import {ckbytesToShannons, hexToArrayBuffer, hexToInt, intToHex} from "../lib/util.js";
-import {describeTransaction, initializeLab, validateLab} from "./lab.js";
+import { utils } from "@ckb-lumos/base";
+const { ckbHash } = utils;
+import { initializeConfig } from "@ckb-lumos/config-manager";
+import { addressToScript, sealTransaction, TransactionSkeleton } from "@ckb-lumos/helpers";
+import { Indexer } from "@ckb-lumos/ckb-indexer";
+import { addDefaultCellDeps, addDefaultWitnessPlaceholders, collectCapacity, getLiveCell, indexerReady, readFileToHexString, readFileToHexStringSync, sendTransaction, signTransaction, waitForTransactionConfirmation } from "../lib/index.js";
+import { ckbytesToShannons, hexToArrayBuffer, hexToInt, intToHex } from "../lib/util.js";
+import { describeTransaction, initializeLab } from "../0_lumos_template/lab.js";
 const CONFIG = JSON.parse(fs.readFileSync("../config.json"));
 
 // CKB Node and CKB Indexer Node JSON RPC URLs.
@@ -26,8 +26,9 @@ const DATA_FILE_HASH_1 = ckbHash(hexToArrayBuffer(readFileToHexStringSync(DATA_F
 // This is the TX fee amount that will be paid in Shannons.
 const TX_FEE = 100_000n;
 
-async function deployCode(indexer)
-{
+async function deployCode(indexer) {
+	console.log("DEPLOY CODE\n");
+
 	// Create a transaction skeleton.
 	let transaction = TransactionSkeleton();
 
@@ -35,32 +36,36 @@ async function deployCode(indexer)
 	transaction = addDefaultCellDeps(transaction);
 
 	// Create a cell with data from the specified file.
-	const {hexString: hexString1, dataSize: dataSize1} = await readFileToHexString(DATA_FILE_1);
+	const { hexString: hexString1, dataSize: dataSize1 } = await readFileToHexString(DATA_FILE_1);
 	const outputCapacity1 = ckbytesToShannons(61n) + ckbytesToShannons(dataSize1);
-	const output1 = {cellOutput: {capacity: intToHex(outputCapacity1), lock: addressToScript(ADDRESS_1), type: null}, data: hexString1};
-	transaction = transaction.update("outputs", (i)=>i.push(output1));
+	const output1 = {
+		cellOutput: {
+			capacity: intToHex(outputCapacity1),
+			lock: addressToScript(ADDRESS_1),
+			type: null
+		},
+		data: hexString1
+	};
+	transaction = transaction.update("outputs", (i) => i.push(output1));
 
 	// Add input capacity cells.
 	const collectedCells = await collectCapacity(indexer, addressToScript(ADDRESS_1), outputCapacity1 + ckbytesToShannons(61n) + TX_FEE);
-	transaction = transaction.update("inputs", (i)=>i.concat(collectedCells.inputCells));
+	transaction = transaction.update("inputs", (i) => i.concat(collectedCells.inputCells));
 
 	// Determine the capacity of all input cells.
-	const inputCapacity = transaction.inputs.toArray().reduce((a, c)=>a+hexToInt(c.cellOutput.capacity), 0n);
-	const outputCapacity = transaction.outputs.toArray().reduce((a, c)=>a+hexToInt(c.cellOutput.capacity), 0n);
+	const inputCapacity = transaction.inputs.toArray().reduce((a, c) => a + hexToInt(c.cellOutput.capacity), 0n);
+	const outputCapacity = transaction.outputs.toArray().reduce((a, c) => a + hexToInt(c.cellOutput.capacity), 0n);
 
 	// Create a change Cell for the remaining CKBytes.
 	const changeCapacity = intToHex(inputCapacity - outputCapacity - TX_FEE);
-	let change = {cellOutput: {capacity: changeCapacity, lock: addressToScript(ADDRESS_1), type: null}, data: "0x"};
-	transaction = transaction.update("outputs", (i)=>i.push(change));
+	let change = { cellOutput: { capacity: changeCapacity, lock: addressToScript(ADDRESS_1), type: null }, data: "0x" };
+	transaction = transaction.update("outputs", (i) => i.push(change));
 
 	// Add in the witness placeholders.
 	transaction = addDefaultWitnessPlaceholders(transaction);
 
 	// Print the details of the transaction to the console.
 	describeTransaction(transaction.toJS());
-
-	// Validate the transaction against the lab requirements.
-	await validateLab(transaction, "deploy");
 
 	// Sign the transaction.
 	const signedTx = signTransaction(transaction, PRIVATE_KEY_1);
@@ -83,49 +88,48 @@ async function deployCode(indexer)
 	return outPoint;
 }
 
-async function createCells(indexer)
-{
+async function createCells(indexer, scriptOutPoint) {
+	console.log("CREATE CELLS\n");
+
 	// Create a transaction skeleton.
 	let transaction = TransactionSkeleton();
 
 	// Add the cell dep for the lock script.
 	transaction = addDefaultCellDeps(transaction);
+	const cellDep = { depType: "code", outPoint: scriptOutPoint };
+	transaction = transaction.update("cellDeps", (cellDeps) => cellDeps.push(cellDep));
 
 	// Create a cell using the always success lock.
-	const outputCapacity1 = ckbytesToShannons(41n);
-	const lockScript1 =
+	const outputCapacity1 = ckbytesToShannons(94n);
+	const lockScript1 = addressToScript(ADDRESS_1);
+	const typeScript1 =
 	{
 		codeHash: DATA_FILE_HASH_1,
 		hashType: "data1",
 		args: "0x"
 	};
-	const output1 = {cellOutput: {capacity: intToHex(outputCapacity1), lock: lockScript1, type: null}, data: "0x"};
-	transaction = transaction.update("outputs", (i)=>i.push(output1));
-	transaction = transaction.update("outputs", (i)=>i.push(output1));
-	transaction = transaction.update("outputs", (i)=>i.push(output1));
+	const output1 = { cellOutput: { capacity: intToHex(outputCapacity1), lock: lockScript1, type: typeScript1 }, data: "0x" };
+	transaction = transaction.update("outputs", (i) => i.push(output1));
 
 	// Add input capacity cells.
 	const capacityRequired = outputCapacity1 + ckbytesToShannons(61n) + TX_FEE;
 	const collectedCells = await collectCapacity(indexer, addressToScript(ADDRESS_1), capacityRequired);
-	transaction = transaction.update("inputs", (i)=>i.concat(collectedCells.inputCells));
+	transaction = transaction.update("inputs", (i) => i.concat(collectedCells.inputCells));
 
 	// Determine the capacity of all input cells.
-	const inputCapacity = transaction.inputs.toArray().reduce((a, c)=>a+hexToInt(c.cellOutput.capacity), 0n);
-	const outputCapacity = transaction.outputs.toArray().reduce((a, c)=>a+hexToInt(c.cellOutput.capacity), 0n);
+	const inputCapacity = transaction.inputs.toArray().reduce((a, c) => a + hexToInt(c.cellOutput.capacity), 0n);
+	const outputCapacity = transaction.outputs.toArray().reduce((a, c) => a + hexToInt(c.cellOutput.capacity), 0n);
 
 	// Create a change Cell for the remaining CKBytes.
 	const changeCapacity = intToHex(inputCapacity - outputCapacity - TX_FEE);
-	let change = {cellOutput: {capacity: changeCapacity, lock: addressToScript(ADDRESS_1), type: null}, data: "0x"};
-	transaction = transaction.update("outputs", (i)=>i.push(change));
+	let change = { cellOutput: { capacity: changeCapacity, lock: addressToScript(ADDRESS_1), type: null }, data: "0x" };
+	transaction = transaction.update("outputs", (i) => i.push(change));
 
 	// Add in the witness placeholders.
 	transaction = addDefaultWitnessPlaceholders(transaction);
 
 	// Print the details of the transaction to the console.
 	describeTransaction(transaction.toJS());
-
-	// Validate the transaction against the lab requirements.
-	await validateLab(transaction, "create");
 
 	// Sign the transaction.
 	const signedTx = signTransaction(transaction, PRIVATE_KEY_1);
@@ -140,40 +144,38 @@ async function createCells(indexer)
 
 	// Return the out points for the cells locked with the always success lock so it can be used in the next transaction.
 	const outPoints =
-	[
-		{txHash: txid, index: "0x0"},
-		{txHash: txid, index: "0x1"},
-		{txHash: txid, index: "0x2"}
-	];
+		[
+			{ txHash: txid, index: "0x0" },
+		];
 
 	return outPoints;
 }
 
-async function consumeCells(indexer, alwaysSuccessCodeOutPoint, alwaysSuccessCellOutPoints)
-{
+async function consumeCells(indexer, scriptOutPoint, cellOutPoints) {
+	console.log("CONSUME CELLS\n");
+
 	// Create a transaction skeleton.
 	let transaction = TransactionSkeleton();
 
 	// Add the cell dep for the lock script.
 	transaction = addDefaultCellDeps(transaction);
-	const cellDep = {depType: "code", outPoint: alwaysSuccessCodeOutPoint};
-	transaction = transaction.update("cellDeps", (cellDeps)=>cellDeps.push(cellDep));
+	const cellDep = { depType: "code", outPoint: scriptOutPoint };
+	transaction = transaction.update("cellDeps", (cellDeps) => cellDeps.push(cellDep));
 
 	// Add the always success cells to the transaction.
-	for(const outPoint of alwaysSuccessCellOutPoints)
-	{
+	for (const outPoint of cellOutPoints) {
 		const input = await getLiveCell(NODE_URL, outPoint);
-		transaction = transaction.update("inputs", (i)=>i.push(input));
+		transaction = transaction.update("inputs", (i) => i.push(input));
 	}
 
 	// Determine the capacity of all input cells.
-	const inputCapacity = transaction.inputs.toArray().reduce((a, c)=>a+hexToInt(c.cellOutput.capacity), 0n);
-	const outputCapacity = transaction.outputs.toArray().reduce((a, c)=>a+hexToInt(c.cellOutput.capacity), 0n);
+	const inputCapacity = transaction.inputs.toArray().reduce((a, c) => a + hexToInt(c.cellOutput.capacity), 0n);
+	const outputCapacity = transaction.outputs.toArray().reduce((a, c) => a + hexToInt(c.cellOutput.capacity), 0n);
 
 	// Create a change Cell for the remaining CKBytes.
 	const changeCapacity = intToHex(inputCapacity - outputCapacity - TX_FEE);
-	let change = {cellOutput: {capacity: changeCapacity, lock: addressToScript(ADDRESS_1), type: null}, data: "0x"};
-	transaction = transaction.update("outputs", (i)=>i.push(change));
+	let change = { cellOutput: { capacity: changeCapacity, lock: addressToScript(ADDRESS_1), type: null }, data: "0x" };
+	transaction = transaction.update("outputs", (i) => i.push(change));
 
 	// Add in the witness placeholders.
 	transaction = addDefaultWitnessPlaceholders(transaction);
@@ -181,11 +183,8 @@ async function consumeCells(indexer, alwaysSuccessCodeOutPoint, alwaysSuccessCel
 	// Print the details of the transaction to the console.
 	describeTransaction(transaction.toJS());
 
-	// Validate the transaction against the lab requirements.
-	await validateLab(transaction, "consume");
-
-	// Finalize the transaction with no signatures.
-	const signedTx = sealTransaction(transaction, []);
+	// Sign the transaction.
+	const signedTx = signTransaction(transaction, PRIVATE_KEY_1);
 
 	// Send the transaction to the RPC node.
 	const txid = await sendTransaction(NODE_URL, signedTx);
@@ -196,8 +195,7 @@ async function consumeCells(indexer, alwaysSuccessCodeOutPoint, alwaysSuccessCel
 	console.log("\n");
 }
 
-async function main()
-{
+async function main() {
 	// Initialize the Lumos configuration using ./config.json.
 	initializeConfig(CONFIG);
 
@@ -209,17 +207,17 @@ async function main()
 	await indexerReady(indexer);
 
 	// Create a cell that contains the always success binary.
-	const alwaysSuccessCodeOutPoint = await deployCode(indexer);
+	const scriptOutPoint = await deployCode(indexer);
 	await indexerReady(indexer);
 
 	// Create a cell that uses the always success binary as a lock script.
-	const alwaysSuccessCellOutPoint = await createCells(indexer);
+	const alwaysSuccessCellOutPoint = await createCells(indexer, scriptOutPoint);
 	await indexerReady(indexer);
 
 	// Consume the cell using the always success lock script.
-	await consumeCells(indexer, alwaysSuccessCodeOutPoint, alwaysSuccessCellOutPoint);
+	await consumeCells(indexer, scriptOutPoint, alwaysSuccessCellOutPoint);
 	await indexerReady(indexer);
 
-	console.log("Lab completed successfully!");
+	console.log("Execution completed successfully!");
 }
 main();
