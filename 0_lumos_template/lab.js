@@ -151,34 +151,19 @@ export function signTransaction(transaction, PRIVATE_KEY) {
 }
 
 // Put here data1 configs until lumos fix this issue: https://github.com/ckb-js/lumos/issues/498
-//
-// "ICKB_DOMAIN_LOGIC": {
-// 	"CODE_HASH": "0x0eab33e812a8d275bd5810e81382abc751591553b26eb95dd761ed46fc5e7604",
-// 	"HASH_TYPE": "data1",
-// 	"TX_HASH": "0x8d3186c08ea39c9d902e05218e7d9ce0c97f9b08b731d62070b8a7650da91374",
-// 	"INDEX": "0x0",
-// 	"DEP_TYPE": "code"
-//   },
-//   "ICKB_LIMIT_ORDER": {
-// 	"CODE_HASH": "0xf437e61c35287b037264fad3fc092db672d536b54294905584031c2b51a28bda",
-// 	"HASH_TYPE": "data1",
-// 	"TX_HASH": "0x22130e3bb5d74b66511047ef6df93e8dcaa0424cc64ffdbad7c46db2d23c47b5",
-// 	"INDEX": "0x0",
-// 	"DEP_TYPE": "code"
-//   }
 
 const ICKB_DOMAIN_LOGIC = {
 	"CODE_HASH": "0x0eab33e812a8d275bd5810e81382abc751591553b26eb95dd761ed46fc5e7604",
 	"HASH_TYPE": "data1",
-	"TX_HASH": "0x8d3186c08ea39c9d902e05218e7d9ce0c97f9b08b731d62070b8a7650da91374",
-	"INDEX": "0x0",
+	"TX_HASH": "0x8013b3cfb07fe8b22f4b03f1b7ce81f153de2d139d0adfc53cd9fb6d7e755b94",
+	"INDEX": "0x1",
 	"DEP_TYPE": "code"
 }
 const ICKB_LIMIT_ORDER = {
 	"CODE_HASH": "0xf437e61c35287b037264fad3fc092db672d536b54294905584031c2b51a28bda",
 	"HASH_TYPE": "data1",
-	"TX_HASH": "0x22130e3bb5d74b66511047ef6df93e8dcaa0424cc64ffdbad7c46db2d23c47b5",
-	"INDEX": "0x0",
+	"TX_HASH": "0x8013b3cfb07fe8b22f4b03f1b7ce81f153de2d139d0adfc53cd9fb6d7e755b94",
+	"INDEX": "0x2",
 	"DEP_TYPE": "code"
 }
 
