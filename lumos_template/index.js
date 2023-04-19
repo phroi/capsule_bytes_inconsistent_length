@@ -8,7 +8,7 @@ import { addressToScript, sealTransaction, TransactionSkeleton } from "@ckb-lumo
 import { Indexer } from "@ckb-lumos/ckb-indexer";
 import { addDefaultCellDeps, addDefaultWitnessPlaceholders, collectCapacity, getLiveCell, indexerReady, readFileToHexString, readFileToHexStringSync, sendTransaction, signTransaction, waitForTransactionConfirmation } from "../lib/index.js";
 import { ckbytesToShannons, hexToArrayBuffer, hexToInt, intToHex } from "../lib/util.js";
-import { describeTransaction, initializeLab } from "../0_lumos_template/lab.js";
+import { describeTransaction, initializeLab } from "../lumos_template/lab.js";
 const CONFIG = JSON.parse(fs.readFileSync("../config.json"));
 
 // CKB Node and CKB Indexer Node JSON RPC URLs.

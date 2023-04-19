@@ -8,8 +8,8 @@ import { addressToScript, sealTransaction, TransactionSkeleton } from "@ckb-lumo
 import { Indexer } from "@ckb-lumos/ckb-indexer";
 import { addDefaultCellDeps, addDefaultWitnessPlaceholders, collectCapacity, getLiveCell, indexerReady, readFileToHexString, readFileToHexStringSync, sendTransaction, signTransaction, waitForTransactionConfirmation } from "../lib/index.js";
 import { ckbytesToShannons, hexToArrayBuffer, hexToInt, intToHex } from "../lib/util.js";
-import { describeTransaction, initializeLab } from "../0_lumos_template/lab.js";
-const CONFIG = JSON.parse(fs.readFileSync("../config.json"));
+import { describeTransaction, initializeLab } from "../lumos_template/lab.js";
+import { exit } from "process";
 
 // CKB Node and CKB Indexer Node JSON RPC URLs.
 const NODE_URL = "http://127.0.0.1:8114/";
@@ -103,10 +103,29 @@ async function deployCode(indexer) {
 	return outPoints;
 }
 
+function listHashes2Config() {
+	let content = '';
+	process.stdin.resume();
+	process.stdin.on('data', function (buf) { content += buf.toString(); });
+	process.stdin.on('end', function () {
+		const CONFIG = JSON.parse(content);
+		////Elaborate this data..............
+	});
+
+
+}
+
 
 async function main() {
+	if (process.stdin.isTTY) {
+		throw new Error(['Error: no list-hashes data detected in input stream.',
+			'Use in the following way:',
+			'(cd ~/ckb && ckb list-hashes --format json) | (cd 0_populate_config && node.index.js)',
+		].join('\n'));
+	}
+
 	// Initialize the Lumos configuration using ./config.json.
-	initializeConfig(CONFIG);
+	initializeConfig(listHashes2Config());
 
 	// Initialize an Indexer instance.
 	const indexer = new Indexer(INDEXER_URL, NODE_URL);
@@ -125,7 +144,7 @@ async function main() {
 
 	// Output the scriptOutPoints data.
 
-	console.log("Replace in config.json and lab.js in 0_lumos_template the following values.\n");
+	console.log("Replace in config.json and lab.js in lumos_template the following values.\n");
 
 	for (const scriptOutPoint of scriptOutPoints) {
 		console.log(`At ${scriptOutPoint.name} replace with the followings:`);

@@ -150,7 +150,15 @@ export function signTransaction(transaction, PRIVATE_KEY) {
 	return lab.signTransaction(transaction, PRIVATE_KEY);
 }
 
-// Put here data1 configs until lumos fix this issue: https://github.com/ckb-js/lumos/issues/498
+// Put here configs until lumos fix and merge this issue: https://github.com/ckb-js/lumos/issues/498
+
+const SUDT = {
+	"CODE_HASH": "0xe1e354d6d643ad42724d40967e334984534e0367405c5ae42a9d7d63d77df419",
+	"HASH_TYPE": "data",
+	"TX_HASH": "0x8013b3cfb07fe8b22f4b03f1b7ce81f153de2d139d0adfc53cd9fb6d7e755b94",
+	"INDEX": "0x0",
+	"DEP_TYPE": "code"
+}
 
 const ICKB_DOMAIN_LOGIC = {
 	"CODE_HASH": "0x0eab33e812a8d275bd5810e81382abc751591553b26eb95dd761ed46fc5e7604",
@@ -168,11 +176,14 @@ const ICKB_LIMIT_ORDER = {
 }
 
 
+
+
 export default {
 	describeTransaction,
 	getLiveCell,
 	initializeLab,
 	signTransaction,
+	SUDT,
 	ICKB_DOMAIN_LOGIC,
 	ICKB_LIMIT_ORDER
 };

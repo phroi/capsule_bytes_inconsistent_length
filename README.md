@@ -1,4 +1,4 @@
-# Fulfillment bot
+# iCKB v1 bot demo
 
 ## Setup
 
@@ -6,7 +6,7 @@
 
 0. Install `Git`
 1. Install `Node.js 16 LTS`
-2. Download latest [`ckb (Portable), tested with ckb 0.109.0`](https://github.com/nervosnetwork/ckb/releases/latest)
+2. Download latest [`ckb (Portable)`](https://github.com/nervosnetwork/ckb/releases/latest), tested with `ckb 0.109.0`
 3. Extract the `ckb` compressed folder and renamed it to `~/ckb`
 
 ### Devchain configuration
@@ -52,7 +52,7 @@ value = 200 # instead of 5000
 5. Start ckb node and miner:
 
 ```bash
-((trap 'kill -INT 0' SIGINT; cd ~/ckb/; ckb run --indexer & sleep 1 && ckb miner))
+(trap 'kill -INT 0' SIGINT; cd ~/ckb/; ckb run --indexer & sleep 1 && ckb miner)
 ```
 
 6. Create Private Key Files:
@@ -74,23 +74,17 @@ ckb-cli account import --privkey-path pk2
 1. Download this repo:  
 
 ```bash
-git clone https://github.com/ickb/fulfillment-bot.git
+git clone https://github.com/ickb/v1-bot-demo.git
 ```
 
 2. Enter into the repo:
 
 ```bash
-cd fulfillment-bot
+cd v1-bot-demo
 ```
 
-3. Populate config.json:
+3. Populate config.json and deploy scripts on devnet:
 
 ```bash
-(cd ~/ckb && ckb list-hashes --format json) | (cd 0_populate_config && node.index.js)
-```
-
-4. Deploy scripts on devnet:
-
-```bash
-(cd 1_deploy_scripts && node.index.js)
+(cd ~/ckb && ckb list-hashes --format json) | (cd 1_deploy_scripts && node.index.js)
 ```
