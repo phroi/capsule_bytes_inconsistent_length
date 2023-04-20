@@ -86,5 +86,5 @@ cd v1-bot-demo
 3. Populate config.json and deploy scripts on devnet:
 
 ```bash
-(cd ~/ckb && ckb list-hashes --format json) | (cd 1_deploy_scripts && node.index.js)
+(cd ~/ckb && ckb list-hashes --format json) | (cd 0_deploy_scripts && node index.js)
 ```

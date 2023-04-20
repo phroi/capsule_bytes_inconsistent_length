@@ -103,29 +103,37 @@ async function deployCode(indexer) {
 	return outPoints;
 }
 
-function listHashes2Config() {
-	let content = '';
-	process.stdin.resume();
-	process.stdin.on('data', function (buf) { content += buf.toString(); });
-	process.stdin.on('end', function () {
-		const CONFIG = JSON.parse(content);
-		////Elaborate this data..............
+async function readStdinAsync() {
+	return new Promise((resolve, reject) => {
+		let content = '';
+		process.stdin.on('data', (buf) => { content += buf.toString(); });
+		process.stdin.on('end', () => { resolve(content) });
+		process.stdin.on('error', (err) => reject(err));
+		process.stdin.resume();
 	});
-
-
 }
 
+async function stdinHashesList2Config() {
+	const listHashes = JSON.parse(await readStdinAsync());
+
+	console.log(listHashes);
+}
 
 async function main() {
 	if (process.stdin.isTTY) {
 		throw new Error(['Error: no list-hashes data detected in input stream.',
-			'Use in the following way:',
-			'(cd ~/ckb && ckb list-hashes --format json) | (cd 0_populate_config && node.index.js)',
+			'The correct use is the following:',
+			'(cd ~/ckb && ckb list-hashes --format json) | (cd 0_deploy_scripts && node index.js)\n',
 		].join('\n'));
 	}
 
+	stdinHashesList2Config();
+
+	return
+
+
 	// Initialize the Lumos configuration using ./config.json.
-	initializeConfig(listHashes2Config());
+	initializeConfig(stdinHashesList2Config());
 
 	// Initialize an Indexer instance.
 	const indexer = new Indexer(INDEXER_URL, NODE_URL);
