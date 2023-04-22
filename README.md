@@ -49,7 +49,7 @@ permanent_difficulty_in_dummy = true
 value = 200 # instead of 5000
 ```
 
-5. Start ckb node and miner:
+5. In a new terminal start ckb node and miner:
 
 ```bash
 (trap 'kill -INT 0' SIGINT; cd ~/ckb/; ckb run --indexer & sleep 1 && ckb miner)
@@ -66,12 +66,15 @@ echo 0x63d86723e08f0f813a36ce6aa123bb2289d90680ae1e99d4de8cdb334553f24d > pk2
 
 ``` bash
 ckb-cli account import --privkey-path pk1
+```
+
+``` bash
 ckb-cli account import --privkey-path pk2
 ```
 
 ### Configure project with local devchain
 
-1. Download this repo:  
+1. Download this repo in a folder of your choice:  
 
 ```bash
 git clone https://github.com/ickb/v1-bot-demo.git

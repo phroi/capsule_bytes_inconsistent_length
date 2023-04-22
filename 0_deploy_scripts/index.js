@@ -6,10 +6,9 @@ const { ckbHash } = utils;
 import { initializeConfig } from "@ckb-lumos/config-manager";
 import { addressToScript, sealTransaction, TransactionSkeleton } from "@ckb-lumos/helpers";
 import { Indexer } from "@ckb-lumos/ckb-indexer";
-import { addDefaultCellDeps, addDefaultWitnessPlaceholders, collectCapacity, getLiveCell, indexerReady, readFileToHexString, readFileToHexStringSync, sendTransaction, signTransaction, waitForTransactionConfirmation } from "../lib/index.js";
+import { addDefaultCellDeps, addDefaultWitnessPlaceholders, collectCapacity, indexerReady, readFileToHexString, readFileToHexStringSync, sendTransaction, signTransaction, waitForTransactionConfirmation } from "../lib/index.js";
 import { ckbytesToShannons, hexToArrayBuffer, hexToInt, intToHex } from "../lib/util.js";
 import { describeTransaction, initializeLab } from "../lumos_template/lab.js";
-import { exit } from "process";
 
 // CKB Node and CKB Indexer Node JSON RPC URLs.
 const NODE_URL = "http://127.0.0.1:8114/";
@@ -33,7 +32,7 @@ async function deployCode(indexer) {
 
 	// Create cells with data from the specified files.
 	let outputCapacityTmp = 0n;
-	const data_files = ["../files/sudt", "../files/ickb_domain_logic", "../files/ickb_limit_order"];
+	const data_files = ["../files/sudt", "../files/ickb_domain_logic", "../files/ckb_sudt_limit_order"];
 	for (const data_file_1 of data_files) {
 		const { hexString: hexString1, dataSize: dataSize1 } = await readFileToHexString(data_file_1);
 		const outputCapacity1 = ckbytesToShannons(61n) + ckbytesToShannons(dataSize1);
@@ -79,26 +78,13 @@ async function deployCode(indexer) {
 	await waitForTransactionConfirmation(NODE_URL, txid);
 	console.log("\n");
 
-	// Return the out points
-	const myclean = (x) => x.replace("../files/", "").toUpperCase();
-
-	const outPoints = [
-		{
-			name: myclean(data_files[0]),
-			txHash: txid,
-			index: "0x0"
-		},
-		{
-			name: myclean(data_files[1]),
-			txHash: txid,
-			index: "0x1"
-		},
-		{
-			name: myclean(data_files[2]),
-			txHash: txid,
-			index: "0x2"
-		}
-	];
+	const outPoints = data_files.map(function (path, i) {
+		return {
+			path: path,
+			tx_hash: txid,
+			index: intToHex(i)
+		};
+	});
 
 	return outPoints;
 }
@@ -113,12 +99,6 @@ async function readStdinAsync() {
 	});
 }
 
-async function stdinHashesList2Config() {
-	const listHashes = JSON.parse(await readStdinAsync());
-
-	console.log(listHashes);
-}
-
 async function main() {
 	if (process.stdin.isTTY) {
 		throw new Error(['Error: no list-hashes data detected in input stream.',
@@ -127,13 +107,62 @@ async function main() {
 		].join('\n'));
 	}
 
-	stdinHashesList2Config();
+	const listHashes = JSON.parse(await readStdinAsync());
 
-	return
+	const config = {
+		"PREFIX": "ckt",
+		"SCRIPTS": {
+			"SECP256K1_BLAKE160": {
+				"CODE_HASH": "0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8",
+				"HASH_TYPE": "type",
+				"TX_HASH": "0x0000000000000000000000000000000000000000000000000000000000000000",
+				"INDEX": "0x0",
+				"DEP_TYPE": "depGroup",
+				"SHORT_ID": 0
+			},
+			"SECP256K1_BLAKE160_MULTISIG": {
+				"CODE_HASH": "0x5c5069eb0857efc65e1bca0c07df34c31663b3622fd3876c876320fc9634e2a8",
+				"HASH_TYPE": "type",
+				"TX_HASH": "0x0000000000000000000000000000000000000000000000000000000000000000",
+				"INDEX": "0x1",
+				"DEP_TYPE": "depGroup",
+				"SHORT_ID": 1
+			},
+			"DAO": {
+				"CODE_HASH": "0x82d76d1b75fe2fd9a27dfbaa65a039221a380d76c926f378d3f81cf3e7e13f2e",
+				"HASH_TYPE": "type",
+				"TX_HASH": "0x0000000000000000000000000000000000000000000000000000000000000000",
+				"INDEX": "0x2",
+				"DEP_TYPE": "code"
+			}
+		}
+	};
 
+	const secp256k1_blake160 = config.SCRIPTS.SECP256K1_BLAKE160;
+	const secp256k1_blake160_multisig = config.SCRIPTS.SECP256K1_BLAKE160_MULTISIG;
+	const dao = config.SCRIPTS.DAO;
+	const system_cells = listHashes.ckb_dev.system_cells;
+	const dep_groups = listHashes.ckb_dev.dep_groups;
 
-	// Initialize the Lumos configuration using ./config.json.
-	initializeConfig(stdinHashesList2Config());
+	let obj = dep_groups.find((o) => o.included_cells.toString() === [
+		"Bundled(specs/cells/secp256k1_data)",
+		"Bundled(specs/cells/secp256k1_blake160_sighash_all)"
+	].toString());
+	secp256k1_blake160.TX_HASH = obj.tx_hash;
+	secp256k1_blake160.INDEX = intToHex(obj.index);
+
+	obj = dep_groups.find((o) => o.included_cells.toString() === [
+		"Bundled(specs/cells/secp256k1_data)",
+		"Bundled(specs/cells/secp256k1_blake160_multisig_all)"
+	].toString());
+	secp256k1_blake160_multisig.TX_HASH = obj.tx_hash;
+	secp256k1_blake160_multisig.INDEX = intToHex(obj.index);
+
+	obj = system_cells.find((o) => o.path === "Bundled(specs/cells/dao)");
+	dao.TX_HASH = obj.tx_hash;
+	dao.INDEX = intToHex(obj.index);
+
+	initializeConfig(config);
 
 	// Initialize an Indexer instance.
 	const indexer = new Indexer(INDEXER_URL, NODE_URL);
@@ -142,23 +171,32 @@ async function main() {
 	await initializeLab(NODE_URL, indexer);
 	await indexerReady(indexer);
 
-
 	// Create a cell that contains the binaries.
 
 	const scriptOutPoints = await deployCode(indexer);
 	await indexerReady(indexer);
 
-	console.log("Execution completed successfully!");
-
-	// Output the scriptOutPoints data.
-
-	console.log("Replace in config.json and lab.js in lumos_template the following values.\n");
-
-	for (const scriptOutPoint of scriptOutPoints) {
-		console.log(`At ${scriptOutPoint.name} replace with the followings:`);
-		console.log(`"TX_HASH": "${scriptOutPoint.txHash}",`);
-		console.log(`"INDEX": "${scriptOutPoint.index}",`);
-		console.log();
+	const ickb_scripts = {}
+	for (const s of scriptOutPoints) {
+		ickb_scripts[s.path.replace("../files/", "").toUpperCase()] = {
+			CODE_HASH: ckbHash(hexToArrayBuffer(readFileToHexStringSync(s.path).hexString)),
+			HASH_TYPE: "data",
+			TX_HASH: s.tx_hash,
+			INDEX: s.index,
+			DEP_TYPE: "code"
+		}
 	}
+
+	const fullConfig = {
+		"PREFIX": config.PREFIX,
+		"SCRIPTS": { ...config.SCRIPTS, ...ickb_scripts }
+	}
+
+	console.log("Config.json initialized to:")
+	console.log(fullConfig)
+
+	fs.writeFileSync("../config.json", JSON.stringify(fullConfig, null, 2))
+
+	console.log("Execution completed successfully!");
 }
 main();
