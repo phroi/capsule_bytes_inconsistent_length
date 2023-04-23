@@ -21,7 +21,11 @@ const ADDRESS_1 = "ckt1qzda0cr08m85hc8jlnfp3zer7xulejywt49kt2rr0vthywaa50xwsqvc3
 
 // This is the always success RISC-V binary.
 const DATA_FILE_1 = "../files/always_success";
+// const DATA_FILE_1 = "../files/ickb_domain_logic";
 const DATA_FILE_HASH_1 = ckbHash(hexToArrayBuffer(readFileToHexStringSync(DATA_FILE_1).hexString)); // Blake2b hash of the always success binary.
+const DATA_FILE_HASH_TYPE_1 = "data1";
+const IS_DATA_FILE_TYPE_1 = false;
+
 
 // This is the TX fee amount that will be paid in Shannons.
 const TX_FEE = 100_000n;
@@ -101,13 +105,23 @@ async function createCells(indexer, scriptOutPoint) {
 
 	// Create a cell using the always success lock.
 	const outputCapacity1 = ckbytesToShannons(94n);
-	const lockScript1 = addressToScript(ADDRESS_1);
-	const typeScript1 =
+	let lockScript1 =
 	{
 		codeHash: DATA_FILE_HASH_1,
 		hashType: "data1",
 		args: "0x"
 	};
+	let typeScript1 = null;
+	if (IS_DATA_FILE_TYPE_1) {
+		lockScript1 = addressToScript(ADDRESS_1);
+		typeScript1 =
+		{
+			codeHash: DATA_FILE_HASH_1,
+			hashType: DATA_FILE_HASH_TYPE_1,
+			args: "0x"
+		};
+	}
+
 	const output1 = { cellOutput: { capacity: intToHex(outputCapacity1), lock: lockScript1, type: typeScript1 }, data: "0x" };
 	transaction = transaction.update("outputs", (i) => i.push(output1));
 
@@ -184,7 +198,7 @@ async function consumeCells(indexer, scriptOutPoint, cellOutPoints) {
 	describeTransaction(transaction.toJS());
 
 	// Sign the transaction.
-	const signedTx = signTransaction(transaction, PRIVATE_KEY_1);
+	const signedTx = IS_DATA_FILE_TYPE_1 ? signTransaction(transaction, PRIVATE_KEY_1) : sealTransaction(transaction, []);
 
 	// Send the transaction to the RPC node.
 	const txid = await sendTransaction(NODE_URL, signedTx);
