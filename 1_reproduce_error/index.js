@@ -8,7 +8,7 @@ import { addressToScript, sealTransaction, TransactionSkeleton } from "@ckb-lumo
 import { Indexer } from "@ckb-lumos/ckb-indexer";
 import { addDefaultCellDeps, addDefaultWitnessPlaceholders, collectCapacity, getLiveCell, indexerReady, readFileToHexString, readFileToHexStringSync, sendTransaction, signTransaction, waitForTransactionConfirmation } from "../lib/index.js";
 import { ckbytesToShannons, hexToArrayBuffer, hexToInt, intToHex } from "../lib/util.js";
-import { describeTransaction, initializeLab } from "../lumos_template/lab.js";
+import { describeTransaction, initializeLab } from "./lab.js";
 const CONFIG = JSON.parse(fs.readFileSync("../config.json"));
 
 // CKB Node and CKB Indexer Node JSON RPC URLs.
@@ -20,8 +20,8 @@ const PRIVATE_KEY_1 = "0x67842f5e4fa0edb34c9b4adbe8c3c1f3c737941f7c875d18bc6ec2f
 const ADDRESS_1 = "ckt1qzda0cr08m85hc8jlnfp3zer7xulejywt49kt2rr0vthywaa50xwsqvc32wruaxqnk4hdj8yr4yp5u056dkhwtc94sy8q";
 
 // This is the always success RISC-V binary.
-const DATA_FILE_1 = "../files/always_success";
-// const DATA_FILE_1 = "../files/ickb_domain_logic";
+// const DATA_FILE_1 = "../files/always_success";
+const DATA_FILE_1 = "../files/len_error_script";
 const DATA_FILE_HASH_1 = ckbHash(hexToArrayBuffer(readFileToHexStringSync(DATA_FILE_1).hexString)); // Blake2b hash of the always success binary.
 const DATA_FILE_HASH_TYPE_1 = "data1";
 const IS_DATA_FILE_TYPE_1 = false;

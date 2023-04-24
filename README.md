@@ -1,4 +1,30 @@
-# iCKB v1 bot demo
+# capsule_bytes_inconsistent_length
+
+Executing these tests on `Capsule 0.9.0` with `rustc 1.63.0` exhibits the following behavior.
+
+From [Lumos JavaScript](https://github.com/phroi/capsule_bytes_inconsistent_length/blob/master/1_reproduce_error/index.js#L112):
+
+``` javascript
+{
+    codeHash: DATA_FILE_HASH_1,
+    hashType: "data1",
+    args: "0x"
+};
+```
+
+But then from the [rust code](https://github.com/phroi/capsule_bytes_inconsistent_length/blob/master/len_error_script/contracts/len_error_script/src/entry.rs#L13):
+
+``` rust
+debug!("script.args().len(): {:#?}", script.args().len());
+debug!("script.args().as_slice().len(): {:#?}", script.args().as_slice().len());
+```
+
+And the output is:
+
+``` bash
+script.args().len(): 0
+script.args().as_slice().len(): 4
+```
 
 ## Setup
 
@@ -31,7 +57,15 @@ hash_type = "type"
 message = "0x"
 ```
 
-3. In the `specs/dev.toml` file under the `[params]` section set:
+3. In the `ckb.toml` file under the `[block_assembler]` section set:
+
+```toml
+[logger]
+filter = "info,ckb-script=debug"# instead of "info"
+# Other parameters...
+```
+
+4. In the `specs/dev.toml` file under the `[params]` section set:
 
 ``` toml
 [params]
@@ -41,7 +75,7 @@ genesis_epoch_length = 2 # instead of 1000
 permanent_difficulty_in_dummy = true
 ```
 
-4. In the `miner-ckb.toml` file under the `[[miner.workers]]` section set:
+5. In the `miner-ckb.toml` file under the `[[miner.workers]]` section set:
 
 ``` toml
 [[miner.workers]]
@@ -49,45 +83,22 @@ permanent_difficulty_in_dummy = true
 value = 200 # instead of 5000
 ```
 
-5. In a new terminal start ckb node and miner:
-
-```bash
-(trap 'kill -INT 0' SIGINT; cd ~/ckb/; ckb run --indexer & sleep 1 && ckb miner)
-```
-
-6. Create Private Key Files:
-
-``` bash
-echo 0xd00c06bfd800d27397002dca6fb0993d5ba6399b4238b2f29ee9deb97593d2bc > pk1
-echo 0x63d86723e08f0f813a36ce6aa123bb2289d90680ae1e99d4de8cdb334553f24d > pk2
-```
-
-7. Import the Private Keys:
-
-``` bash
-ckb-cli account import --privkey-path pk1
-```
-
-``` bash
-ckb-cli account import --privkey-path pk2
-```
-
 ### Configure project with local devchain
 
 1. Download this repo in a folder of your choice:  
 
 ```bash
-git clone https://github.com/ickb/v1-bot-demo.git
+git clone https://github.com/ickb/capsule_len_error.git
 ```
 
 2. Enter into the repo:
 
 ```bash
-cd v1-bot-demo
+cd capsule_len_error
 ```
 
-3. Populate config.json and deploy scripts on devnet:
+3. Run runner:
 
 ```bash
-(cd ~/ckb && ckb list-hashes --format json) | (cd 0_deploy_scripts && node index.js)
+./runner.sh
 ```
